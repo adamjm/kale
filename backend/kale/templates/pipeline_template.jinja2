@@ -121,6 +121,11 @@ def auto_generated_pipeline({%- for arg in parameters_names -%}
     for k, v in step_limits.items():
       {{ name }}_task.container.add_resource_limit(k, v)
     {%- endif %}
+    {%- if nb_graph.nodes(data=True)[name].get(“tolerations”) %}
+    step_toleration = {{ nb_graph.nodes(data=True)[name].get(“tolerations”, {}) }}
+    for k, v in step_tolerations.items():
+      {{ name }}_task.container.add_toleration(k, v)
+    {%- endif %}
     {{ name }}_task.container.working_dir = "{{ abs_working_dir }}"
     {{ name }}_task.container.set_security_context(k8s_client.V1SecurityContext(run_as_user=0))
     output_artifacts = {}
