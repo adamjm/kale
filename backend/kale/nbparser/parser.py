@@ -37,6 +37,8 @@ ANNOTATION_TAG = r'^annotation:%s:(.*)$' % K8S_ANNOTATION_KEY
 # Limits map to K8s limits, like CPU, Mem, GPU, ...
 # E.g.: limit:nvidia.com/gpu:2
 LIMITS_TAG = r'^limit:([_a-z-\.\/]+):([_a-zA-Z0-9\.]+)$'
+##TODO Fix reg expression for toleration
+TOLERATIONS_TAG = r'^toleration:([_a-z-\.\/]+):([_a-zA-Z0-9\.]+)$'
 
 _TAGS_LANGUAGE = [SKIP_TAG,
                   IMPORT_TAG,
