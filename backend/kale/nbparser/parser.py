@@ -47,7 +47,8 @@ _TAGS_LANGUAGE = [SKIP_TAG,
                   PIPELINE_PARAMETERS_TAG,
                   PIPELINE_METRICS_TAG,
                   ANNOTATION_TAG,
-                  LIMITS_TAG]
+                  LIMITS_TAG,
+                  TOLERATIONS_TAG]
 
 
 def parse_metadata(metadata):
@@ -72,6 +73,7 @@ def parse_metadata(metadata):
     # when they are empty
     cell_annotations = dict()
     cell_limits = dict()
+    cell_tolerations = list()
 
     # the notebook cell was not tagged
     if 'tags' not in metadata or len(metadata['tags']) == 0:
@@ -117,6 +119,9 @@ def parse_metadata(metadata):
             limit_key = tag_parts.pop(0)
             limit_value = tag_parts.pop(0)
             cell_limits.update({limit_key: limit_value})
+            
+        if tag_name == "toleration":
+            pass
 
         # name of the future Pipeline step
         # TODO: Deprecate `block` in future release
