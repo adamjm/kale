@@ -16,6 +16,7 @@ import re
 import warnings
 
 import networkx as nx
+from kubernetes.client import V1Toleration
 
 SKIP_TAG = r'^skip$'
 IMPORT_TAG = r'^imports$'
@@ -38,7 +39,7 @@ ANNOTATION_TAG = r'^annotation:%s:(.*)$' % K8S_ANNOTATION_KEY
 # E.g.: limit:nvidia.com/gpu:2
 LIMITS_TAG = r'^limit:([_a-z-\.\/]+):([_a-zA-Z0-9\.]+)$'
 ##TODO Fix reg expression for toleration
-TOLERATIONS_TAG = r'^toleration:%s:([Exists])|([Equal]):(.*):([NoSchedue])|([PreferNoSchedule])|([NoExecute])$' % K8S_ANNOTATION_KEY
+TOLERATIONS_TAG = r'^toleration:%s:([Exists])|([Equal]):([NoSchedue])|([PreferNoSchedule])|([NoExecute])$' % K8S_ANNOTATION_KEY
 
 _TAGS_LANGUAGE = [SKIP_TAG,
                   IMPORT_TAG,
@@ -123,7 +124,20 @@ def parse_metadata(metadata):
             cell_limits.update({limit_key: limit_value})
             
         if tag_name == "toleration":
-            pass
+            if len(tag_parts) > 3:
+                toleration=V1Toleration(
+                    key=tag_parts.pop(0),
+                    operator=tag_parts.pop(0),
+                    effect=tag_parts.pop(0),
+                    value=tag_parts.pop(0)
+                )
+            else:
+                toleration=V1Toleration(
+                    key=tag_parts.pop(0),
+                    operator=tag_parts.pop(0),
+                    effect=tag_parts.pop(0)
+                )
+            toleration.append(cell_tolerations)
 
         # name of the future Pipeline step
         # TODO: Deprecate `block` in future release
@@ -154,6 +168,12 @@ def parse_metadata(metadata):
             raise ValueError("A cell can not provide Pod resource limits in a"
                              " cell that does not declare a step name.")
         parsed_tags['limits'] = cell_limits
+        
+    if cell_tolerations:
+        if not parsed_tags['step_names']:
+            raise ValueError("A cell can not provide Pod tolerations in a"
+                             " cell that does not declare a step name.")
+        parsed_tags['tolerations'] = cell_tolerations
     return parsed_tags
 
 
@@ -333,6 +353,7 @@ def parse_notebook(notebook):
         # a block names and (possibly) some dependencies
         cell_annotations = tags.get('annotations', {})
         cell_limits = tags.get('limits', {})
+        cell_tolerations = tags.get('tolerations', [])
 
         # if the cell was not tagged with a step name,
         # add the code to the previous cell
@@ -365,7 +386,8 @@ def parse_notebook(notebook):
                 nb_graph.add_node(step_name, source=[c.source],
                                   ins=set(), outs=set(),
                                   annotations=cell_annotations,
-                                  limits=cell_limits)
+                                  limits=cell_limits,
+                                  tolerations=cell_tolerations)
                 for _prev_step in tags['prev_steps']:
                     if _prev_step not in nb_graph.nodes:
                         raise ValueError("Step %s does not exist. It was "
