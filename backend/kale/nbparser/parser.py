@@ -16,7 +16,6 @@ import re
 import warnings
 
 import networkx as nx
-from kubernetes.client import V1Toleration
 
 SKIP_TAG = r'^skip$'
 IMPORT_TAG = r'^imports$'
@@ -125,19 +124,19 @@ def parse_metadata(metadata):
             
         if tag_name == "toleration":
             if len(tag_parts) > 3:
-                toleration=V1Toleration(
+                toleration=dict(
                     key=tag_parts.pop(0),
                     operator=tag_parts.pop(0),
                     effect=tag_parts.pop(0),
                     value=tag_parts.pop(0)
                 )
             else:
-                toleration=V1Toleration(
+                toleration=dict(
                     key=tag_parts.pop(0),
                     operator=tag_parts.pop(0),
                     effect=tag_parts.pop(0)
                 )
-            toleration.append(cell_tolerations)
+            cell_tolerations.append(toleration)
 
         # name of the future Pipeline step
         # TODO: Deprecate `block` in future release

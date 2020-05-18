@@ -123,8 +123,19 @@ def auto_generated_pipeline({%- for arg in parameters_names -%}
     {%- endif %}
     {%- if nb_graph.nodes(data=True)[name].get(“tolerations”) %}
     step_toleration = {{ nb_graph.nodes(data=True)[name].get(“tolerations”, []) }}
-    for toleration in step_tolerations:
-      {{ name }}_task.container.add_toleration(toleration)
+    for tol_dict in step_tolerations:
+        if len(tol_dict) > 3: 
+            toleration=k8s_client.V1Toleration(
+                key=tol_dict.get("key"),
+                operator=tol_dict.get("operator"),
+                effect=tol_dict.get("effect"),
+                value=tol_dict.get("value"))
+        else:
+            toleration=k8s_client.V1Toleration(
+                key=tol_dict.get("key"),
+                operator=tol_dict.get("operator"),
+                effect=tol_dict.get("effect"))
+        {{ name }}_task.container.add_toleration(toleration)
     {%- endif %}
     {{ name }}_task.container.working_dir = "{{ abs_working_dir }}"
     {{ name }}_task.container.set_security_context(k8s_client.V1SecurityContext(run_as_user=0))
